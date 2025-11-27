@@ -147,6 +147,78 @@ export const comments = sqliteTable('comments', {
 }));
 
 /**
+ * Authors Table
+ */
+export const authors = sqliteTable('authors', {
+  id: text('id').primaryKey(),
+  slug: text('slug').notNull().unique(),
+  name: text('name').notNull(),
+  email: text('email').notNull().unique(),
+  bio: text('bio'),
+  avatar: text('avatar'),
+  title: text('title'), // e.g., "Senior Developer", "Tech Writer"
+  
+  // Social Links
+  twitter: text('twitter'),
+  linkedin: text('linkedin'),
+  github: text('github'),
+  website: text('website'),
+  
+  // Stats
+  postCount: integer('post_count').notNull().default(0),
+  
+  // Dates
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  slugIdx: index('author_slug_idx').on(table.slug),
+  emailIdx: index('author_email_idx').on(table.email),
+}));
+
+/**
+ * Post Authors Junction Table (Many-to-Many)
+ * Allows 1-2 authors per blog post
+ */
+export const postAuthors = sqliteTable('post_authors', {
+  postId: text('post_id').notNull(),
+  authorId: text('author_id').notNull(),
+  order: integer('order').notNull().default(0), // Primary author = 0, Secondary = 1
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  postIdx: index('post_author_post_idx').on(table.postId),
+  authorIdx: index('post_author_author_idx').on(table.authorId),
+}));
+
+/**
+ * Admin Users Table - For authentication
+ */
+export const adminUsers = sqliteTable('admin_users', {
+  id: text('id').primaryKey(),
+  email: text('email').notNull().unique(),
+  password: text('password').notNull(), // Hashed with bcrypt
+  name: text('name').notNull(),
+  role: text('role', { enum: ['super_admin', 'admin', 'editor'] })
+    .notNull()
+    .default('admin'),
+  active: integer('active', { mode: 'boolean' }).notNull().default(true),
+  lastLoginAt: integer('last_login_at', { mode: 'timestamp' }),
+  createdAt: integer('created_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: integer('updated_at', { mode: 'timestamp' })
+    .notNull()
+    .default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  emailIdx: index('admin_email_idx').on(table.email),
+}));
+
+/**
  * Settings Table
  */
 export const settings = sqliteTable('settings', {
@@ -195,4 +267,10 @@ export type NewTag = typeof tags.$inferInsert;
 export type Comment = typeof comments.$inferSelect;
 export type NewComment = typeof comments.$inferInsert;
 export type Settings = typeof settings.$inferSelect;
+export type Author = typeof authors.$inferSelect;
+export type NewAuthor = typeof authors.$inferInsert;
+export type PostAuthor = typeof postAuthors.$inferSelect;
+export type NewPostAuthor = typeof postAuthors.$inferInsert;
+export type AdminUser = typeof adminUsers.$inferSelect;
+export type NewAdminUser = typeof adminUsers.$inferInsert;
 

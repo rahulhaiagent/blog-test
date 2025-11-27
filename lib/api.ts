@@ -8,7 +8,7 @@
  * - Optimized for ISR and static generation
  */
 
-import { Post, PostMetadata } from './types';
+import { Post, PostMetadata, Author } from './types';
 import {
   getAllPublishedPosts,
   getPostBySlug as dbGetPostBySlug,
@@ -19,6 +19,11 @@ import {
   getFeaturedPosts as dbGetFeaturedPosts,
   getAllCategories,
   getAllTags,
+  getAllAuthors as dbGetAllAuthors,
+  getAuthorBySlug as dbGetAuthorBySlug,
+  getAllAuthorSlugs as dbGetAllAuthorSlugs,
+  getAuthorsForPost as dbGetAuthorsForPost,
+  getPostsByAuthor as dbGetPostsByAuthor,
 } from './db/queries';
 
 // Safely convert various date representations to ISO string
@@ -177,6 +182,182 @@ export async function getTags() {
     return await getAllTags();
   } catch (error) {
     console.error('Error fetching tags:', error);
+    return [];
+  }
+}
+
+/**
+ * Get posts by category with optional limit
+ */
+export async function getPostsByCategory(categoryId: string, limit?: number): Promise<Post[]> {
+  try {
+    const dbPosts = await dbGetPostsByCategory(categoryId);
+    const posts = dbPosts.map(post => ({
+      id: post.id,
+      slug: post.slug,
+      title: post.title,
+      excerpt: post.excerpt,
+      content: post.content,
+      author: post.author,
+      publishedAt: toISODate(post.publishedAt) || new Date().toISOString(),
+      updatedAt: toISODate(post.updatedAt),
+      featuredImage: post.featuredImage || undefined,
+      tags: JSON.parse(post.tags),
+      categories: [post.categoryId],
+    }));
+    
+    return limit ? posts.slice(0, limit) : posts;
+  } catch (error) {
+    console.error('Error fetching posts by category:', error);
+    return [];
+  }
+}
+
+/**
+ * Get featured/popular posts
+ */
+export async function getFeaturedPosts(limit: number = 5): Promise<Post[]> {
+  try {
+    const dbPosts = await dbGetFeaturedPosts(limit);
+    return dbPosts.map(post => ({
+      id: post.id,
+      slug: post.slug,
+      title: post.title,
+      excerpt: post.excerpt,
+      content: post.content,
+      author: post.author,
+      publishedAt: toISODate(post.publishedAt) || new Date().toISOString(),
+      updatedAt: toISODate(post.updatedAt),
+      featuredImage: post.featuredImage || undefined,
+      tags: JSON.parse(post.tags),
+      categories: [post.categoryId],
+    }));
+  } catch (error) {
+    console.error('Error fetching featured posts:', error);
+    return [];
+  }
+}
+
+/**
+ * Get all authors
+ */
+export async function getAllAuthors(): Promise<Author[]> {
+  try {
+    const dbAuthors = await dbGetAllAuthors();
+    return dbAuthors.map(author => ({
+      id: author.id,
+      slug: author.slug,
+      name: author.name,
+      email: author.email,
+      bio: author.bio || undefined,
+      avatar: author.avatar || undefined,
+      title: author.title || undefined,
+      twitter: author.twitter || undefined,
+      linkedin: author.linkedin || undefined,
+      github: author.github || undefined,
+      website: author.website || undefined,
+      postCount: author.postCount,
+      createdAt: toISODate(author.createdAt),
+      updatedAt: toISODate(author.updatedAt),
+    }));
+  } catch (error) {
+    console.error('Error fetching authors:', error);
+    return [];
+  }
+}
+
+/**
+ * Get author by slug
+ */
+export async function getAuthorBySlug(slug: string): Promise<Author | null> {
+  try {
+    const dbAuthor = await dbGetAuthorBySlug(slug);
+    
+    if (!dbAuthor) {
+      return null;
+    }
+
+    return {
+      id: dbAuthor.id,
+      slug: dbAuthor.slug,
+      name: dbAuthor.name,
+      email: dbAuthor.email,
+      bio: dbAuthor.bio || undefined,
+      avatar: dbAuthor.avatar || undefined,
+      title: dbAuthor.title || undefined,
+      twitter: dbAuthor.twitter || undefined,
+      linkedin: dbAuthor.linkedin || undefined,
+      github: dbAuthor.github || undefined,
+      website: dbAuthor.website || undefined,
+      postCount: dbAuthor.postCount,
+      createdAt: toISODate(dbAuthor.createdAt),
+      updatedAt: toISODate(dbAuthor.updatedAt),
+    };
+  } catch (error) {
+    console.error(`Error fetching author ${slug}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Get all author slugs for static generation
+ */
+export async function getAllAuthorSlugs(): Promise<string[]> {
+  try {
+    return await dbGetAllAuthorSlugs();
+  } catch (error) {
+    console.error('Error fetching author slugs:', error);
+    return [];
+  }
+}
+
+/**
+ * Get authors for a specific post
+ */
+export async function getAuthorsForPost(postId: string): Promise<Author[]> {
+  try {
+    const dbAuthors = await dbGetAuthorsForPost(postId);
+    return dbAuthors.map(author => ({
+      id: author.id,
+      slug: author.slug,
+      name: author.name,
+      email: author.email,
+      bio: author.bio || undefined,
+      avatar: author.avatar || undefined,
+      title: author.title || undefined,
+      twitter: author.twitter || undefined,
+      linkedin: author.linkedin || undefined,
+      github: author.github || undefined,
+      website: author.website || undefined,
+      postCount: author.postCount,
+    }));
+  } catch (error) {
+    console.error(`Error fetching authors for post ${postId}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Get posts by author
+ */
+export async function getPostsByAuthor(authorId: string): Promise<Post[]> {
+  try {
+    const dbPosts = await dbGetPostsByAuthor(authorId);
+    return dbPosts.map(post => ({
+      id: post.id,
+      slug: post.slug,
+      title: post.title,
+      excerpt: post.excerpt,
+      content: post.content,
+      author: post.author,
+      publishedAt: toISODate(post.publishedAt) || new Date().toISOString(),
+      updatedAt: toISODate(post.updatedAt),
+      featuredImage: post.featuredImage || undefined,
+      tags: JSON.parse(post.tags),
+      categories: [post.categoryId],
+    }));
+  } catch (error) {
+    console.error(`Error fetching posts by author ${authorId}:`, error);
     return [];
   }
 }

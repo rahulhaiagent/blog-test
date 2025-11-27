@@ -81,3 +81,63 @@ export function generateExcerpt(content: string, maxLength: number = 150): strin
   return truncateText(plainText, maxLength);
 }
 
+interface Heading {
+  id: string;
+  text: string;
+  level: number;
+}
+
+/**
+ * Extract headings from markdown or HTML content
+ * Example: extractHeadings("## Heading 1\n## Heading 2")
+ */
+export function extractHeadings(content: string): Heading[] {
+  // Check if content is HTML or Markdown
+  const isHTML = /<[a-z][\s\S]*>/i.test(content);
+
+  if (isHTML) {
+    // Extract H2 and H3 headings from HTML content
+    const h2Regex = /<h2[^>]*>(.*?)<\/h2>/gi;
+    const h3Regex = /<h3[^>]*>(.*?)<\/h3>/gi;
+
+    const h2Matches = Array.from(content.matchAll(h2Regex));
+    const h3Matches = Array.from(content.matchAll(h3Regex));
+
+    const headings: Heading[] = [];
+
+    h2Matches.forEach((match) => {
+      const text = match[1].replace(/<[^>]*>/g, '').trim(); // Remove any inner HTML tags
+      const id = text
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      headings.push({ id, text, level: 2 });
+    });
+
+    h3Matches.forEach((match) => {
+      const text = match[1].replace(/<[^>]*>/g, '').trim();
+      const id = text
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+      headings.push({ id, text, level: 3 });
+    });
+
+    return headings;
+  } else {
+    // Extract H2 headings from markdown content
+    const h2Regex = /^##\s+(.+)$/gm;
+    const matches = Array.from(content.matchAll(h2Regex));
+
+    return matches.map((match) => {
+      const text = match[1].trim();
+      const id = text
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '');
+
+      return { id, text, level: 2 };
+    });
+  }
+}
+

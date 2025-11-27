@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
+import { Header } from "@/components/Header";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
@@ -60,42 +54,54 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="antialiased min-h-screen flex flex-col">
-        <header className="border-b border-primary-200 bg-white">
-          <nav className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <a href="/" className="text-2xl font-bold text-primary-900 hover:text-accent-700 transition-colors">
-              Blog CMS
-            </a>
-            <div className="flex gap-6">
-              <a href="/" className="text-primary-700 hover:text-accent-700 transition-colors">
-                Home
-              </a>
-              <a href="/blog" className="text-primary-700 hover:text-accent-700 transition-colors">
-                Blog
-              </a>
-            </div>
-          </nav>
-        </header>
+    <html lang="en">
+      <body className="antialiased min-h-screen flex flex-col bg-white font-sans">
+        <Header />
         
         <main className="flex-1">
           {children}
         </main>
         
-        <footer className="border-t border-primary-200 bg-primary-50 mt-16">
-          <div className="container mx-auto px-4 py-8">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-primary-600 text-sm">
-                © {new Date().getFullYear()} Blog CMS. All rights reserved.
-              </p>
-              <div className="flex gap-6">
-                <a href="/blog" className="text-primary-600 hover:text-accent-700 text-sm transition-colors">
-                  Blog
-                </a>
-                <a href="/sitemap.xml" className="text-primary-600 hover:text-accent-700 text-sm transition-colors">
-                  Sitemap
-                </a>
+        <footer className="border-t border-gray-200 bg-gray-50 mt-16">
+          <div className="container mx-auto max-w-[1400px] px-6 py-12">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+              <div>
+                <h3 className="font-bold text-gray-900 mb-4">About</h3>
+                <ul className="space-y-2">
+                  <li><a href="/about" className="text-gray-600 hover:text-gray-900 text-sm">About Us</a></li>
+                  <li><a href="/contact" className="text-gray-600 hover:text-gray-900 text-sm">Contact</a></li>
+                  <li><a href="/advertise" className="text-gray-600 hover:text-gray-900 text-sm">Advertise</a></li>
+                </ul>
               </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-4">Resources</h3>
+                <ul className="space-y-2">
+                  <li><a href="/blog" className="text-gray-600 hover:text-gray-900 text-sm">Blog</a></li>
+                  <li><a href="/categories" className="text-gray-600 hover:text-gray-900 text-sm">Categories</a></li>
+                  <li><a href="/authors" className="text-gray-600 hover:text-gray-900 text-sm">Authors</a></li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-4">Legal</h3>
+                <ul className="space-y-2">
+                  <li><a href="/privacy" className="text-gray-600 hover:text-gray-900 text-sm">Privacy Policy</a></li>
+                  <li><a href="/terms" className="text-gray-600 hover:text-gray-900 text-sm">Terms of Service</a></li>
+                  <li><a href="/sitemap.xml" className="text-gray-600 hover:text-gray-900 text-sm">Sitemap</a></li>
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900 mb-4">Follow Us</h3>
+                <ul className="space-y-2">
+                  <li><a href="#" className="text-gray-600 hover:text-gray-900 text-sm">Twitter</a></li>
+                  <li><a href="#" className="text-gray-600 hover:text-gray-900 text-sm">Facebook</a></li>
+                  <li><a href="#" className="text-gray-600 hover:text-gray-900 text-sm">LinkedIn</a></li>
+                </ul>
+              </div>
+            </div>
+            <div className="pt-8 border-t border-gray-200">
+              <p className="text-gray-600 text-sm text-center">
+                © {new Date().getFullYear()} TechBlog. All rights reserved.
+              </p>
             </div>
           </div>
         </footer>

@@ -7,8 +7,9 @@ import { nanoid } from 'nanoid';
 import slugify from 'slugify';
 import { sql, eq } from 'drizzle-orm';
 import { db } from './index';
-import { posts, categories, tags, settings } from './schema';
+import { posts, categories, tags, settings, authors, postAuthors, adminUsers } from './schema';
 import { runMigrations } from './migrate';
+import bcrypt from 'bcryptjs';
 
 export async function seedDatabase() {
   console.log('🌱 Seeding database...');
@@ -31,7 +32,23 @@ export async function seedDatabase() {
       commentModeration: true,
     }).onConflictDoNothing();
 
-    // 2. Create categories
+    // 2. Create default admin user
+    console.log('Creating admin user...');
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+    await db.insert(adminUsers).values({
+      id: nanoid(10),
+      email: 'admin@example.com',
+      password: hashedPassword,
+      name: 'Admin User',
+      role: 'super_admin',
+      active: true,
+    }).onConflictDoNothing();
+    console.log('✅ Default admin user created:');
+    console.log('   Email: admin@example.com');
+    console.log('   Password: admin123');
+    console.log('   ⚠️  IMPORTANT: Change this password after first login!');
+
+    // 3. Create categories
     console.log('Creating categories...');
     const categoryData = [
       { name: 'Technology', icon: '💻', color: '#3b82f6', description: 'Tech news and tutorials' },
@@ -57,7 +74,96 @@ export async function seedDatabase() {
       createdCategories.push({ id, slug, name: cat.name });
     }
 
-    // 3. Create tags
+    // 3. Create authors with random names
+    console.log('Creating authors...');
+    const authorData = [
+      { 
+        name: 'Sarah Mitchell', 
+        title: 'Senior Software Engineer', 
+        bio: 'Full-stack developer with 10+ years of experience building scalable web applications. Passionate about clean code and modern JavaScript frameworks.',
+        twitter: 'sarahmitchell',
+        linkedin: 'sarah-mitchell-dev',
+        github: 'sarahmitchell'
+      },
+      { 
+        name: 'Marcus Chen', 
+        title: 'DevOps Architect', 
+        bio: 'Cloud infrastructure specialist and automation enthusiast. Helping teams deploy faster and more reliably with modern DevOps practices.',
+        twitter: 'marcuschen',
+        linkedin: 'marcus-chen-devops',
+        github: 'marcuschen'
+      },
+      { 
+        name: 'Emily Rodriguez', 
+        title: 'UI/UX Designer & Frontend Developer', 
+        bio: 'Creating beautiful and intuitive user experiences. Specialized in React, design systems, and accessibility.',
+        twitter: 'emilyrodriguez',
+        linkedin: 'emily-rodriguez-design',
+        github: 'emilyrodriguez'
+      },
+      { 
+        name: 'David Kim', 
+        title: 'Tech Lead & Solutions Architect', 
+        bio: 'Building enterprise-grade applications with a focus on performance and scalability. Expert in Node.js, TypeScript, and microservices architecture.',
+        twitter: 'davidkim',
+        linkedin: 'david-kim-tech',
+        github: 'davidkim'
+      },
+      { 
+        name: 'Jennifer Taylor', 
+        title: 'Data Engineer', 
+        bio: 'Turning data into insights. Specialized in big data processing, machine learning pipelines, and database optimization.',
+        twitter: 'jentaylor',
+        linkedin: 'jennifer-taylor-data',
+        github: 'jentaylor'
+      },
+      { 
+        name: 'Alex Johnson', 
+        title: 'Security Engineer', 
+        bio: 'Cybersecurity specialist focused on application security, penetration testing, and secure coding practices.',
+        twitter: 'alexjohnson',
+        linkedin: 'alex-johnson-security',
+        github: 'alexjohnson'
+      },
+      { 
+        name: 'Priya Sharma', 
+        title: 'Mobile App Developer', 
+        bio: 'Building cross-platform mobile experiences with React Native and Flutter. Passionate about mobile UX and performance optimization.',
+        twitter: 'priyasharma',
+        linkedin: 'priya-sharma-mobile',
+        github: 'priyasharma'
+      },
+      { 
+        name: 'James Wilson', 
+        title: 'Backend Developer', 
+        bio: 'API design and backend architecture expert. Working with Node.js, Python, and distributed systems to build robust server-side applications.',
+        twitter: 'jameswilson',
+        linkedin: 'james-wilson-backend',
+        github: 'jameswilson'
+      },
+    ];
+
+    const createdAuthors = [];
+    for (const authorInfo of authorData) {
+      const id = nanoid(10);
+      const slug = slugify(authorInfo.name, { lower: true, strict: true });
+      await db.insert(authors).values({
+        id,
+        slug,
+        name: authorInfo.name,
+        email: `${slug}@example.com`,
+        bio: authorInfo.bio,
+        title: authorInfo.title,
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(authorInfo.name)}&size=200&background=random`,
+        twitter: authorInfo.twitter,
+        linkedin: authorInfo.linkedin,
+        github: authorInfo.github,
+        website: `https://${slug}.dev`,
+      }).onConflictDoNothing();
+      createdAuthors.push({ id, slug, name: authorInfo.name });
+    }
+
+    // 4. Create tags
     console.log('Creating tags...');
     const tagData = [
       'JavaScript', 'TypeScript', 'React', 'Next.js', 'Node.js',
@@ -77,7 +183,7 @@ export async function seedDatabase() {
       createdTags.push({ id, slug, name: tagName });
     }
 
-    // 4. Create sample posts
+    // 5. Create sample posts
     console.log('Creating sample posts...');
     const postTitles = [
       'Getting Started with Next.js 14: A Complete Guide',
@@ -102,6 +208,18 @@ export async function seedDatabase() {
         createdTags[(i + 1) % createdTags.length].id,
         createdTags[(i + 2) % createdTags.length].id,
       ];
+
+      // Assign 1-2 authors per post (realistic distribution)
+      const primaryAuthor = createdAuthors[i % createdAuthors.length];
+      const selectedAuthorIds = [primaryAuthor.id];
+      
+      // 40% chance of having a second author
+      if (Math.random() < 0.4) {
+        const secondaryAuthor = createdAuthors[(i + 1) % createdAuthors.length];
+        if (secondaryAuthor.id !== primaryAuthor.id) {
+          selectedAuthorIds.push(secondaryAuthor.id);
+        }
+      }
 
       const content = `# ${title}
 
@@ -190,7 +308,7 @@ Happy coding! 🚀`;
         title,
         excerpt,
         content,
-        author: 'Admin',
+        author: createdAuthors[selectedAuthorIds.length > 0 ? createdAuthors.findIndex(a => a.id === selectedAuthorIds[0]) : 0].name, // Keep for backwards compatibility
         categoryId: category.id,
         tags: JSON.stringify(postTags),
         status: 'published',
@@ -203,6 +321,15 @@ Happy coding! 🚀`;
         featured: i < 3, // First 3 posts are featured
         allowComments: true,
       }).onConflictDoNothing();
+
+      // Create post-author relationships
+      for (let j = 0; j < selectedAuthorIds.length; j++) {
+        await db.insert(postAuthors).values({
+          postId: id,
+          authorId: selectedAuthorIds[j],
+          order: j, // 0 = primary author, 1 = secondary author
+        }).onConflictDoNothing();
+      }
     }
 
     // Update category post counts
@@ -227,8 +354,18 @@ Happy coding! 🚀`;
         .where(eq(tags.id, tag.id));
     }
 
+    // Update author post counts
+    console.log('Updating author counts...');
+    for (const author of createdAuthors) {
+      const count = await db.select().from(postAuthors).where(eq(postAuthors.authorId, author.id));
+      await db.update(authors)
+        .set({ postCount: count.length })
+        .where(eq(authors.id, author.id));
+    }
+
     console.log('✅ Database seeded successfully!');
     console.log(`   - ${createdCategories.length} categories created`);
+    console.log(`   - ${createdAuthors.length} authors created`);
     console.log(`   - ${createdTags.length} tags created`);
     console.log(`   - ${postTitles.length} posts created`);
   } catch (error) {

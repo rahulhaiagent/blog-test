@@ -24,13 +24,13 @@ export default async function BlogPage() {
       {/* Background Graphics */}
       <BackgroundGraphics />
       
-      <div className="container mx-auto px-4 py-12 relative">
+      <div className="container mx-auto max-w-7xl px-4 py-12 relative">
       {/* Header */}
       <div className="text-center mb-12">
-        <h1 className="text-4xl md:text-5xl font-bold text-primary-900 mb-4">
+        <h1 className="text-3xl md:text-4xl font-semibold text-primary-900 mb-4 tracking-tight">
           Blog
         </h1>
-        <p className="text-lg text-primary-600 max-w-2xl mx-auto">
+        <p className="text-base text-primary-600 max-w-2xl mx-auto leading-relaxed">
           Discover articles, tutorials, and insights about web development, 
           technology, and best practices.
         </p>
@@ -38,14 +38,14 @@ export default async function BlogPage() {
 
       {/* Blog Posts Grid */}
       {posts.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {posts.map((post) => (
             <BlogCard key={post.id} post={post} />
           ))}
         </div>
       ) : (
         <div className="text-center py-16">
-          <p className="text-primary-600 text-lg">No blog posts found.</p>
+          <p className="text-primary-600 text-base">No blog posts found.</p>
         </div>
       )}
 

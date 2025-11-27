@@ -106,6 +106,59 @@ export function runMigrations() {
       CREATE INDEX IF NOT EXISTS comment_created_at_idx ON comments(created_at);
     `);
 
+    // Create authors table
+    sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS authors (
+        id TEXT PRIMARY KEY,
+        slug TEXT NOT NULL UNIQUE,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        bio TEXT,
+        avatar TEXT,
+        title TEXT,
+        twitter TEXT,
+        linkedin TEXT,
+        github TEXT,
+        website TEXT,
+        post_count INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS author_slug_idx ON authors(slug);
+      CREATE INDEX IF NOT EXISTS author_email_idx ON authors(email);
+    `);
+
+    // Create post_authors junction table
+    sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS post_authors (
+        post_id TEXT NOT NULL,
+        author_id TEXT NOT NULL,
+        "order" INTEGER NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS post_author_post_idx ON post_authors(post_id);
+      CREATE INDEX IF NOT EXISTS post_author_author_idx ON post_authors(author_id);
+    `);
+
+    // Create admin_users table
+    sqlite.exec(`
+      CREATE TABLE IF NOT EXISTS admin_users (
+        id TEXT PRIMARY KEY,
+        email TEXT NOT NULL UNIQUE,
+        password TEXT NOT NULL,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL DEFAULT 'admin',
+        active INTEGER NOT NULL DEFAULT 1,
+        last_login_at INTEGER,
+        created_at INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+
+      CREATE INDEX IF NOT EXISTS admin_email_idx ON admin_users(email);
+    `);
+
     // Create settings table
     sqlite.exec(`
       CREATE TABLE IF NOT EXISTS settings (

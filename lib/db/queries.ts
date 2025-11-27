@@ -5,7 +5,7 @@
 
 import { eq, desc, and, like, inArray, sql } from 'drizzle-orm';
 import { db } from './index';
-import { posts, categories, tags, Post } from './schema';
+import { posts, categories, tags, authors, postAuthors, Post } from './schema';
 
 /**
  * Get all published posts
@@ -62,7 +62,7 @@ export async function searchPosts(query: string) {
     .from(posts)
     .where(and(
       eq(posts.status, 'published'),
-      sql`(${posts.title} LIKE ${searchTerm} OR ${posts.content} LIKE ${searchTerm})`
+      sql`${posts.title} LIKE ${searchTerm}`
     ))
     .orderBy(desc(posts.publishedAt))
     .all();
@@ -226,5 +226,80 @@ export async function getRecentPosts(limit: number = 5) {
     .orderBy(desc(posts.publishedAt))
     .limit(limit)
     .all();
+}
+
+/**
+ * Get all authors
+ */
+export async function getAllAuthors() {
+  return await db
+    .select()
+    .from(authors)
+    .orderBy(desc(authors.postCount))
+    .all();
+}
+
+/**
+ * Get author by slug
+ */
+export async function getAuthorBySlug(slug: string) {
+  const result = await db
+    .select()
+    .from(authors)
+    .where(eq(authors.slug, slug))
+    .limit(1)
+    .all();
+
+  return result[0] || null;
+}
+
+/**
+ * Get all author slugs for static generation
+ */
+export async function getAllAuthorSlugs() {
+  const result = await db
+    .select({ slug: authors.slug })
+    .from(authors)
+    .all();
+
+  return result.map(r => r.slug);
+}
+
+/**
+ * Get authors for a specific post
+ */
+export async function getAuthorsForPost(postId: string) {
+  const result = await db
+    .select({
+      author: authors,
+      order: postAuthors.order,
+    })
+    .from(postAuthors)
+    .innerJoin(authors, eq(postAuthors.authorId, authors.id))
+    .where(eq(postAuthors.postId, postId))
+    .orderBy(postAuthors.order)
+    .all();
+
+  return result.map(r => r.author);
+}
+
+/**
+ * Get posts by author
+ */
+export async function getPostsByAuthor(authorId: string) {
+  const result = await db
+    .select({
+      post: posts,
+    })
+    .from(postAuthors)
+    .innerJoin(posts, eq(postAuthors.postId, posts.id))
+    .where(and(
+      eq(postAuthors.authorId, authorId),
+      eq(posts.status, 'published')
+    ))
+    .orderBy(desc(posts.publishedAt))
+    .all();
+
+  return result.map(r => r.post);
 }
 

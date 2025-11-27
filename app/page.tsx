@@ -1,82 +1,114 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { getCategories, getPostsByCategory, getFeaturedPosts, getAllPosts } from "@/lib/api";
+import { BlogCard } from "@/components/BlogCard";
+import { MostPopularCarousel } from "@/components/MostPopularCarousel";
+import { HeroSection } from "@/components/HeroSection";
+
+export const revalidate = 3600; // Revalidate every hour
 
 export const metadata: Metadata = {
   title: "Home",
   description: "Welcome to our SEO-optimized blog built with Next.js",
 };
 
-export default function Home() {
+export default async function Home() {
+  // Fetch categories and posts
+  const categories = await getCategories();
+  const allPosts = await getAllPosts();
+  const featuredPosts = await getFeaturedPosts(8);
+
+  // Get posts for each category (limit to 3 per category)
+  const categoryPosts = await Promise.all(
+    categories.slice(0, 4).map(async (category) => ({
+      category,
+      posts: await getPostsByCategory(category.id, 3),
+    }))
+  );
+
   return (
-    <div className="container mx-auto px-4 py-16">
-      {/* Hero Section */}
-      <section className="text-center max-w-4xl mx-auto mb-16">
-        <h1 className="text-5xl md:text-6xl font-bold text-primary-900 mb-6">
-          Welcome to Blog CMS
-        </h1>
-        <p className="text-xl text-primary-600 mb-8 leading-relaxed">
-          A high-performance, SEO-optimized blog built with Next.js 14, featuring 
-          Incremental Static Regeneration for lightning-fast page loads and perfect 
-          Google indexing.
-        </p>
-        <Link
-          href="/blog"
-          className="inline-block bg-accent-600 hover:bg-accent-700 text-white font-semibold px-8 py-3 rounded-lg transition-colors shadow-md hover:shadow-lg"
-        >
-          Read Our Blog
-        </Link>
-      </section>
+    <div className="min-h-screen bg-white">
+      {/* Hero Section with Filtered Cards */}
+      <HeroSection categories={categories} posts={allPosts} />
 
-      {/* Features Section */}
-      <section className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-        <div className="bg-white p-6 rounded-lg border border-primary-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-accent-600 text-3xl mb-4">⚡</div>
-          <h2 className="text-xl font-semibold text-primary-900 mb-3">
-            Lightning Fast
-          </h2>
-          <p className="text-primary-600">
-            ISR pre-renders pages at build time for instant loading. 
-            Optimized images and code splitting ensure maximum performance.
-          </p>
+      {/* Most Popular Section */}
+      {featuredPosts.length > 0 && (
+        <div className="bg-primary-50/30 py-4">
+          <MostPopularCarousel posts={featuredPosts} />
+        </div>
+      )}
+
+      {/* Category Sections */}
+      <div className="container mx-auto max-w-7xl px-4 py-16">
+        {categoryPosts.map(({ category, posts }) => {
+          if (posts.length === 0) return null;
+
+          return (
+            <section key={category.id} className="mb-20 last:mb-0">
+              {/* Section Header */}
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h2 className="text-3xl font-bold text-primary-900 tracking-tight mb-2">
+                    {category.name}
+                  </h2>
+                  {category.description && (
+                    <p className="text-primary-600 text-sm">
+                      {category.description}
+                    </p>
+                  )}
+                </div>
+                <Link
+                  href={`/blog?category=${category.slug}`}
+                  className="text-accent-600 hover:text-accent-700 font-semibold text-base flex items-center gap-2 group"
+                >
+                  See all
+                  <svg
+                    className="w-5 h-5 transition-transform group-hover:translate-x-1"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Link>
+              </div>
+
+              {/* Posts Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {posts.map((post) => (
+                  <BlogCard key={post.id} post={post} variant="compact" />
+                ))}
+              </div>
+            </section>
+          );
+        })}
+      </div>
+
+      {/* CTA Section */}
+      <section className="py-16 bg-gradient-to-br from-primary-900 via-accent-900 to-accent-800 text-white relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-accent-500/20 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-primary-500/20 rounded-full blur-3xl"></div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-primary-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-accent-600 text-3xl mb-4">🔍</div>
-          <h2 className="text-xl font-semibold text-primary-900 mb-3">
-            SEO Optimized
+        <div className="container mx-auto max-w-4xl px-4 text-center relative z-10">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">
+            Stay Updated
           </h2>
-          <p className="text-primary-600">
-            Complete meta tags, structured data, dynamic sitemap, and 
-            server-side rendering ensure perfect Google indexing.
+          <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto leading-relaxed">
+            Subscribe to get the latest articles and insights delivered to your inbox
           </p>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg border border-primary-200 shadow-sm hover:shadow-md transition-shadow">
-          <div className="text-accent-600 text-3xl mb-4">🔄</div>
-          <h2 className="text-xl font-semibold text-primary-900 mb-3">
-            Auto-Updates
-          </h2>
-          <p className="text-primary-600">
-            Content updates automatically without rebuilds. New posts 
-            are indexed by Google within 24-48 hours.
-          </p>
-        </div>
-      </section>
-
-      {/* Tech Stack Section */}
-      <section className="mt-16 text-center max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold text-primary-900 mb-6">
-          Built With Modern Technology
-        </h2>
-        <div className="flex flex-wrap justify-center gap-4">
-          {["Next.js 14", "React 18", "TypeScript", "Tailwind CSS", "ISR"].map((tech) => (
-            <span
-              key={tech}
-              className="px-4 py-2 bg-primary-100 text-primary-700 rounded-full text-sm font-medium"
-            >
-              {tech}
-            </span>
-          ))}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
+            <input
+              type="email"
+              placeholder="Enter your email"
+              className="flex-1 px-6 py-3.5 rounded-xl text-primary-900 focus:outline-none focus:ring-2 focus:ring-white/50 bg-white shadow-lg"
+            />
+            <button className="bg-white text-accent-700 font-bold px-8 py-3.5 rounded-xl hover:bg-accent-50 transition-all hover:shadow-xl whitespace-nowrap">
+              Subscribe
+            </button>
+          </div>
         </div>
       </section>
     </div>

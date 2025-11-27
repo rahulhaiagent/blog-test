@@ -3,6 +3,26 @@
  */
 
 /**
+ * Author interface
+ */
+export interface Author {
+  id: string;
+  slug: string;
+  name: string;
+  email: string;
+  bio?: string;
+  avatar?: string;
+  title?: string;
+  twitter?: string;
+  linkedin?: string;
+  github?: string;
+  website?: string;
+  postCount: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/**
  * Main Post interface representing a blog post
  */
 export interface Post {
@@ -11,7 +31,8 @@ export interface Post {
   title: string;
   excerpt: string;
   content: string;
-  author: string;
+  author: string; // Deprecated: kept for backwards compatibility
+  authors?: Author[]; // New: array of author objects
   publishedAt: string;
   updatedAt?: string;
   featuredImage?: string;
